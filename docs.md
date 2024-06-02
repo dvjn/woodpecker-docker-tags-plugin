@@ -35,14 +35,22 @@ steps:
         sha
 ```
 
-## Tags Input
+## `tag` input
 
 This is the main input for this plugin. This is a multiline string. Each line
 represents a different tag to be applied. Each line is in the form of a cli
 command.
 
-All the available commands are branch, cron, edge, pr, raw, semver, sha, and
-tag.
+All the available commands are:
+
+- [branch](#branch)
+- [cron](#cron)
+- [edge](#edge)
+- [pr](#pr)
+- [raw](#raw)
+- [semver](#semver)
+- [sha](#sha)
+- [tag](#tag)
 
 ### `branch`
 
