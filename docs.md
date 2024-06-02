@@ -52,7 +52,11 @@ All the available commands are:
 - [`sha`](#sha)
 - [`tag`](#tag)
 
+---
+
 ### `branch`
+
+Generates tags from branch names for push events.
 
 ```yaml
 tags: |
@@ -62,7 +66,7 @@ tags: |
   branch -p branch-
 ```
 
-Processes the branch name with an optional prefix and use it as a tag value.
+**Options:**
 
 | Option           | Default | Description                       |
 | ---------------- | ------- | --------------------------------- |
@@ -75,27 +79,51 @@ Processes the branch name with an optional prefix and use it as a tag value.
 | `branch`        | `feature/add-logging` | `feature-add-logging`    |
 | `branch -p br-` | `feature/add-logging` | `br-feature-add-logging` |
 
+---
+
 ### `cron`
 
-Works for cron events and uses the specified date format to generate the tag
-name. This uses GNU coreutils date utility to parse the date. You can find the
-reference for using the format
-[here](https://www.gnu.org/software/coreutils/manual/html_node/Date-format-specifiers.html).
+Generates datetime based tags on cron events.
 
-| Option           | Default  | Description                |
-| ---------------- | -------- | -------------------------- |
-| `-f`, `--format` | `%Y%m%d` | Specifies the date format. |
+```yaml
+tags: |
+  # minimal
+  cron
+  # with custom format
+  cron -f %Y-%m-%d
+```
+
+**Options:**
+
+| Option           | Default  | Description                                                                                                                                                                              |
+| ---------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-f`, `--format` | `%Y%m%d` | The tag format. This supports GNU/date format.<br>You can find the reference for the format [here](https://www.gnu.org/software/coreutils/manual/html_node/Date-format-specifiers.html). |
 
 **Examples:**
 
-| Command                    | Date         | Output               |
-| -------------------------- | ------------ | -------------------- |
-| `cron`                     | `2024-06-02` | `20240602`           |
-| `cron -f nightly-%Y-%m-%d` | `2024-06-02` | `nightly-2024-06-02` |
+| Command                    | Output               |
+| -------------------------- | -------------------- |
+| `cron`                     | `20240602`           |
+| `cron -f nightly-%Y-%m-%d` | `nightly-2024-06-02` |
+
+---
 
 ### `edge`
 
-Let's you mark a branch as the edge/latest branch.
+Generates edge tags for the default branch. The `edge` tag reflects the last
+commit of the active branch on your Git repository.
+
+```yaml
+tags: |
+  # minimal
+  edge
+  # with custom tag value of "next"
+  edge -v next
+  # using branch other than the repository default branch
+  edge -b dev
+```
+
+**Options:**
 
 | Option           | Default              | Description                      |
 | ---------------- | -------------------- | -------------------------------- |
@@ -110,9 +138,21 @@ Let's you mark a branch as the edge/latest branch.
 | `edge -v latest`     | `main` | `latest` |
 | `edge -b dev -v dev` | `dev`  | `dev`    |
 
+---
+
 ### `pr`
 
-Processes the pull request name with an optional prefix and use it as a tag value.
+Generates tag on pull_request event, based on the pull request's id.
+
+```yaml
+tags: |
+  # minimal
+  pr
+  # using custom prefix for tags
+  pr -p pull-
+```
+
+**Options:**
 
 | Option           | Default | Description                             |
 | ---------------- | ------- | --------------------------------------- |
@@ -125,19 +165,33 @@ Processes the pull request name with an optional prefix and use it as a tag valu
 | `pr`          | `123`           | `pr-123`   |
 | `pr -p pull-` | `123`           | `pull-123` |
 
+---
+
 ### `semver`
 
-Parses the git tag name semver format uses it to generate the tag value.
+Generates tags based on semver versions parsed from pushed git tags.
+
+```yaml
+tags: |
+  # minimal
+  smever
+  # generate major version tag
+  semver -f {{major}}
+  # generate major minor version tag
+  semver -f {{major}}.{{minor}}
+```
+
+**Options:**
 
 | Option           | Default       | Description                       |
 | ---------------- | ------------- | --------------------------------- |
 | `-f`, `--format` | `{{version}}` | Specifies the format for the tag. |
 | `-v`, `--value`  | _commit tag_  | Specifies the value for the tag.  |
 
-`format` argument supports the following expressions:
+The `format` argument supports the following expressions:
 
 - `{{raw}}`: the actual tag
-- `{{version}}`: cleaned version
+- `{{version}}`: the cleaned up version
 - `{{major}}`: major version identifier
 - `{{minor}}`: minor version identifier
 - `{{patch}}`: patch version identifier
@@ -156,9 +210,17 @@ Parses the git tag name semver format uses it to generate the tag value.
 | `semver -f {{major}}.{{minor}}`  | `v1.2.3-rc4` | `1.2`       |
 | `semver -f {{patch}}`            | `v1.2.3-rc4` | `3`         |
 
+---
+
 ### `raw`
 
-Outputs any custom tag.
+Generates a raw preconfigured tag on any event.
+
+```yaml
+tags: |
+  # minimal
+  raw -v last-built
+```
 
 | Option          | Default | Description                      |
 | --------------- | ------- | -------------------------------- |
@@ -170,9 +232,23 @@ Outputs any custom tag.
 | ------------- | ------ |
 | `raw -v abcd` | `abcd` |
 
+---
+
 ### `sha`
 
-Uses the commit SHA as tag output.
+Generates tag using the commit SHA.
+
+```yaml
+tags: |
+  # minimal
+  sha
+  # generates tag with full sha
+  sha -l
+  # use custom prefix for sha tag
+  sha -p commit-
+```
+
+**Options:**
 
 | Option           | Default | Description                    |
 | ---------------- | ------- | ------------------------------ |
@@ -187,9 +263,17 @@ Uses the commit SHA as tag output.
 | `sha -l`         | `sha-abcdef1234567890abcdef1234567890abcdef12` |
 | `sha -p commit-` | `commit-abcdef12`                              |
 
+---
+
 ### `tag`
 
-Uses git tag for the output tags.
+Generates tag from pushed git tag.
+
+```yaml
+tags: |
+  # minimal
+  tag
+```
 
 **Examples:**
 
