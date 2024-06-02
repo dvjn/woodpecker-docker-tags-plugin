@@ -6,8 +6,12 @@ commands="${PLUGIN_TAGS}"
 tags_file="${PLUGIN_TAGS_FILE:-.tags}"
 
 sanitize_and_write_tag() {
-  local sanitized_tag="${1//[^a-zA-Z0-9\-\_\.]/-}"
-  local truncated_tag="${sanitized_tag:0:128}"
+  local lowercased_tag sanitized_tag truncated_tag
+
+  lowercased_tag="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
+  sanitized_tag="${lowercased_tag//[^a-zA-Z0-9\-\_\.]/-}"
+  truncated_tag="${sanitized_tag:0:128}"
+
   echo "$truncated_tag" >>"$tags_file"
 }
 

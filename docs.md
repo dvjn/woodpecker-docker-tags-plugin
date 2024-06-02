@@ -280,3 +280,12 @@ tags: |
 | Command | Tag      | Output   |
 | ------- | -------- | -------- |
 | `tag`   | `v1.0.0` | `v1.0.0` |
+
+## Notes
+
+### Tag Sanitization
+
+1. All the values are converted to lowercase.
+2. All the values apart from alphabets, numbers, hyphen (-), underscore (\_) and
+   period (.) are replaces with a hyphen.
+3. The length of the tag is truncated to 128 characters.
