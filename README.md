@@ -1,8 +1,10 @@
 # Woodpecker Plugin - Docker Tags
 
-Woodpecker CI plugin to generate tags for building docker images from Git reference and CI events.
+Woodpecker CI plugin to generate tags file for building Docker Images based on
+CI Events.
 
-This plugin is heavily inspired by the github actions plugin [docker/metadata-action](https://github.com/docker/metadata-action).
+This plugin is heavily inspired by the GitHub Actions Plugin
+[docker/metadata-action](https://github.com/docker/metadata-action).
 
 ## Documentation
 
