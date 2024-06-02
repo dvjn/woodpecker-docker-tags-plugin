@@ -5,24 +5,6 @@ set -euo pipefail
 commands="${PLUGIN_TAGS}"
 tags_file="${PLUGIN_TAGS_FILE:-.tags}"
 
-# Reference: https://gist.github.com/bitmvr/9ed42e1cc2aac799b123de9fdc59b016
-parse_semver() {
-  VERSION="${1#[vV]}"
-  VERSION_MAJOR="${VERSION%%.*}"
-  VERSION_MINOR_PATCH="${VERSION#*.}"
-  VERSION_MINOR="${VERSION_MINOR_PATCH%%.*}"
-  VERSION_PATCH_PRE_RELEASE="${VERSION_MINOR_PATCH#*.}"
-  VERSION_PATCH="${VERSION_PATCH_PRE_RELEASE%%[-+]*}"
-  VERSION_PRE_RELEASE=""
-
-  if [[ "$VERSION" == *-* ]]; then
-    VERSION_PRE_RELEASE="${VERSION#*-}"
-    VERSION_PRE_RELEASE="${VERSION_PRE_RELEASE%%+*}"
-  fi
-
-  export VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_PRE_RELEASE
-}
-
 sanitize_and_write_tag() {
   local sanitized_tag="${1//[^a-zA-Z0-9\-\_\.]/-}"
   local truncated_tag="${sanitized_tag:0:128}"
@@ -71,6 +53,100 @@ handle_cron() {
   sanitize_and_write_tag "$(date +"$format")"
 }
 
+handle_edge() {
+  [[ "$CI_PIPELINE_EVENT" != "push" ]] && return
+
+  local value="edge"
+  local branch="$CI_REPO_DEFAULT_BRANCH"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -v | --value)
+      value="$2"
+      shift
+      ;;
+    -b | --branch)
+      branch="$2"
+      shift
+      ;;
+    *)
+      echo "Invalid option '$1'." >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
+
+  [[ "$CI_COMMIT_BRANCH" != "$branch" ]] && return
+
+  sanitize_and_write_tag "$value"
+}
+
+handle_pr() {
+  [[ "$CI_PIPELINE_EVENT" != "pull_request" ]] && return
+
+  local prefix="pr-"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -p | --prefix)
+      prefix="$2"
+      shift
+      ;;
+    *)
+      echo "Invalid option '$1'." >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
+
+  sanitize_and_write_tag "$prefix$CI_COMMIT_PULL_REQUEST"
+}
+
+handle_raw() {
+  local value=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -v | --value)
+      value="$2"
+      shift
+      ;;
+    *)
+      echo "Invalid option '$1'." >&2
+      exit 1
+      ;;
+    esac
+    shift
+  done
+
+  [[ -z "$value" ]] && {
+    echo "Error: --value is required." >&2
+    exit 1
+  }
+
+  sanitize_and_write_tag "$value"
+}
+
+# Reference: https://gist.github.com/bitmvr/9ed42e1cc2aac799b123de9fdc59b016
+parse_semver() {
+  VERSION="${1#[vV]}"
+  VERSION_MAJOR="${VERSION%%.*}"
+  VERSION_MINOR_PATCH="${VERSION#*.}"
+  VERSION_MINOR="${VERSION_MINOR_PATCH%%.*}"
+  VERSION_PATCH_PRE_RELEASE="${VERSION_MINOR_PATCH#*.}"
+  VERSION_PATCH="${VERSION_PATCH_PRE_RELEASE%%[-+]*}"
+  VERSION_PRE_RELEASE=""
+
+  if [[ "$VERSION" == *-* ]]; then
+    VERSION_PRE_RELEASE="${VERSION#*-}"
+    VERSION_PRE_RELEASE="${VERSION_PRE_RELEASE%%+*}"
+  fi
+
+  export VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_PRE_RELEASE
+}
+
 handle_semver() {
   [[ "$CI_PIPELINE_EVENT" != "tag" ]] && return
 
@@ -106,31 +182,6 @@ handle_semver() {
   )"
 }
 
-handle_raw() {
-  local value=""
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -v | --value)
-      value="$2"
-      shift
-      ;;
-    *)
-      echo "Invalid option '$1'." >&2
-      exit 1
-      ;;
-    esac
-    shift
-  done
-
-  [[ -z "$value" ]] && {
-    echo "Error: --value is required." >&2
-    exit 1
-  }
-
-  sanitize_and_write_tag "$value"
-}
-
 handle_sha() {
   local length=8
   local prefix=sha-
@@ -154,61 +205,10 @@ handle_sha() {
   sanitize_and_write_tag "$prefix${CI_COMMIT_SHA:0:$length}"
 }
 
-handle_edge() {
-  [[ "$CI_PIPELINE_EVENT" != "push" ]] && return
-
-  local value="edge"
-  local branch="$CI_REPO_DEFAULT_BRANCH"
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -v | --value)
-      value="$2"
-      shift
-      ;;
-    -b | --branch)
-      branch="$2"
-      shift
-      ;;
-    *)
-      echo "Invalid option '$1'." >&2
-      exit 1
-      ;;
-    esac
-    shift
-  done
-
-  [[ "$CI_COMMIT_BRANCH" != "$branch" ]] && return
-
-  sanitize_and_write_tag "$value"
-}
-
 handle_tag() {
   [[ "$CI_PIPELINE_EVENT" != "tag" ]] && return
 
   sanitize_and_write_tag "$CI_COMMIT_TAG"
-}
-
-handle_pr() {
-  [[ "$CI_PIPELINE_EVENT" != "pull_request" ]] && return
-
-  local prefix="pr-"
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-    -p | --prefix)
-      prefix="$2"
-      shift
-      ;;
-    *)
-      echo "Invalid option '$1'." >&2
-      exit 1
-      ;;
-    esac
-    shift
-  done
-
-  sanitize_and_write_tag "$prefix$CI_COMMIT_PULL_REQUEST"
 }
 
 handle_command() {
