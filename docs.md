@@ -43,16 +43,24 @@ command.
 
 All the available commands are:
 
-- [branch](#branch)
-- [cron](#cron)
-- [edge](#edge)
-- [pr](#pr)
-- [raw](#raw)
-- [semver](#semver)
-- [sha](#sha)
-- [tag](#tag)
+- [`branch`](#branch)
+- [`cron`](#cron)
+- [`edge`](#edge)
+- [`pr`](#pr)
+- [`raw`](#raw)
+- [`semver`](#semver)
+- [`sha`](#sha)
+- [`tag`](#tag)
 
 ### `branch`
+
+```yaml
+tags: |
+  # minimal
+  branch
+  # with custom prefix
+  branch -p branch-
+```
 
 Processes the branch name with an optional prefix and use it as a tag value.
 
