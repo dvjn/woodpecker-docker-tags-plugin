@@ -1,6 +1,6 @@
 ---
 name: Docker Tags
-description: Plugin to generate tags for building docker images from Git reference and CI events.
+description: Plugin to autogenerate tags for building docker images from Git and CI events.
 
 author: dvjn
 tags: [docker]
@@ -9,13 +9,12 @@ containerImageUrl: https://github.com/dvjn/woodpecker-docker-tags-plugin/pkgs/co
 url: https://github.com/dvjn/woodpecker-docker-tags-plugin
 ---
 
-Woodpecker CI plugin to generate tags for building docker images from Git reference and CI events.
+Woodpecker CI plugin to autogenerate tags for building docker images from Git and CI events.
 
-This plugin can be used to generate `.tags` file for for docker build plugins
-like
+This plugin can be used to autogenerate `.tags` file for docker build plugins like
 [woodpecker-ci/plugin-kaniko](https://github.com/woodpecker-ci/plugin-kaniko)
 and
-[https://codeberg.org/woodpecker-plugins/docker-buildx](https://codeberg.org/woodpecker-plugins/docker-buildx)
+[woodpecker-plugins/docker-buildx](https://codeberg.org/woodpecker-plugins/docker-buildx)
 
 ## Settings
 
