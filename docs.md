@@ -41,7 +41,7 @@ steps:
         sha
 ```
 
-## `tag` input
+## `tags` input
 
 This is the main input for this plugin. This is a multiline string. Each line
 represents a different tag to be applied. Each line is in the form of a cli
