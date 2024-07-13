@@ -197,6 +197,7 @@ handle_sha() {
       ;;
     -p | --prefix)
       prefix="$2"
+      shift
       ;;
     *)
       echo "Invalid option '$1'." >&2
