@@ -2,17 +2,31 @@
 
 set -euo pipefail
 
+# Set defaults for CI variables that may be unset depending on event type
+CI_COMMIT_BRANCH="${CI_COMMIT_BRANCH:-}"
+CI_COMMIT_TAG="${CI_COMMIT_TAG:-}"
+CI_COMMIT_PULL_REQUEST="${CI_COMMIT_PULL_REQUEST:-}"
+CI_REPO_DEFAULT_BRANCH="${CI_REPO_DEFAULT_BRANCH:-}"
+CI_PIPELINE_EVENT="${CI_PIPELINE_EVENT:-}"
+CI_COMMIT_SHA="${CI_COMMIT_SHA:-}"
+
 commands="${PLUGIN_TAGS}"
 tags_file="${PLUGIN_TAGS_FILE:-.tags}"
 
 sanitize_and_write_tag() {
-  local lowercased_tag sanitized_tag truncated_tag
+  local lowercased_tag sanitized_tag truncated_tag final_tag
 
   lowercased_tag="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
   sanitized_tag="${lowercased_tag//[^a-zA-Z0-9\-\_\.]/-}"
   truncated_tag="${sanitized_tag:0:128}"
 
-  echo "$truncated_tag" >>"$tags_file"
+  # Strip leading dashes and dots (invalid in Docker tags)
+  final_tag="${truncated_tag#"${truncated_tag%%[^-\.]*}"}"
+
+  # Skip empty tags
+  [[ -z "$final_tag" ]] && return
+
+  echo "$final_tag" >>"$tags_file"
 }
 
 handle_branch() {
@@ -243,6 +257,7 @@ handle_command() {
 }
 
 remove_duplicate_tags() {
+  [[ ! -f "$tags_file" ]] && return
   awk '!seen[$0]++' "$tags_file" >/tmp/.tags
   mv /tmp/.tags "$tags_file"
 }
