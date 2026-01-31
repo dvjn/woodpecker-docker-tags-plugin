@@ -342,6 +342,130 @@ tags() {
   [ "$(tags)" = "1.2" ]
 }
 
+@test "semver pre-release with version format produces full version" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v0.7.0-beta.0"
+  export PLUGIN_TAGS='semver -f {{version}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "0.7.0-beta.0" ]
+}
+
+@test "semver pre-release default format produces full version" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v0.7.0-beta.0"
+  export PLUGIN_TAGS="semver"
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "0.7.0-beta.0" ]
+}
+
+@test "semver pre-release with raw format produces raw tag" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v0.7.0-beta.0"
+  export PLUGIN_TAGS='semver -f {{raw}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "v0.7.0-beta.0" ]
+}
+
+@test "semver pre-release skips partial major format" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3-rc4"
+  export PLUGIN_TAGS='semver -f {{major}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "" ]
+}
+
+@test "semver pre-release skips partial major.minor format" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3-rc4"
+  export PLUGIN_TAGS='semver -f {{major}}.{{minor}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "" ]
+}
+
+@test "semver pre-release skips partial major.minor.patch format" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v0.7.0-beta.0"
+  export PLUGIN_TAGS='semver -f {{major}}.{{minor}}.{{patch}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "" ]
+}
+
+@test "semver pre-release multi-format produces only version tag" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3-rc4"
+  export PLUGIN_TAGS=$'semver -f {{major}}\nsemver -f {{major}}.{{minor}}\nsemver -f {{major}}.{{minor}}.{{patch}}\nsemver -f {{version}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "1.2.3-rc4" ]
+}
+
+@test "semver auto produces major, minor, patch, and version tags" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3"
+  export PLUGIN_TAGS="semver --auto"
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags | sed -n '1p')" = "1" ]
+  [ "$(tags | sed -n '2p')" = "1.2" ]
+  [ "$(tags | sed -n '3p')" = "1.2.3" ]
+}
+
+@test "semver auto with short flag" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v2.0.1"
+  export PLUGIN_TAGS="semver -a"
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags | sed -n '1p')" = "2" ]
+  [ "$(tags | sed -n '2p')" = "2.0" ]
+  [ "$(tags | sed -n '3p')" = "2.0.1" ]
+}
+
+@test "semver auto with pre-release produces only version tag" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3-beta.0"
+  export PLUGIN_TAGS="semver --auto"
+
+  run ./entrypoint.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(tags)" = "1.2.3-beta.0" ]
+}
+
+@test "semver auto combined with format fails" {
+  export CI_PIPELINE_EVENT=tag
+  export CI_COMMIT_TAG="v1.2.3"
+  export PLUGIN_TAGS='semver --auto -f {{major}}'
+
+  run ./entrypoint.sh
+
+  [ "$status" -ne 0 ]
+}
+
 # =============================================================================
 # raw command tests
 # =============================================================================

@@ -33,9 +33,7 @@ steps:
       tags: |
         edge
         pr
-        semver --format {{major}}
-        semver --format {{major}}.{{minor}}
-        semver --format {{version}}
+        semver --auto
         cron --format nightly-%Y%m%d
         sha
 ```
@@ -179,7 +177,9 @@ Generates tags based on semver versions parsed from pushed git tags.
 ```yaml
 tags: |
   # minimal
-  smever
+  semver
+  # generate all standard version tags at once
+  semver --auto
   # generate major version tag
   semver -f {{major}}
   # generate major minor version tag
@@ -188,10 +188,11 @@ tags: |
 
 **Options:**
 
-| Option           | Default       | Description                       |
-| ---------------- | ------------- | --------------------------------- |
-| `-f`, `--format` | `{{version}}` | Specifies the format for the tag. |
-| `-v`, `--value`  | _commit tag_  | Specifies the value for the tag.  |
+| Option           | Default       | Description                                                   |
+| ---------------- | ------------- | ------------------------------------------------------------- |
+| `-a`, `--auto`   | `false`       | Generate `major`, `major.minor`, `major.minor.patch`, and `version` tags. Cannot be combined with `--format`. |
+| `-f`, `--format` | `{{version}}` | Specifies the format for the tag.                             |
+| `-v`, `--value`  | _commit tag_  | Specifies the value for the tag.                              |
 
 The `format` argument supports the following expressions:
 
@@ -201,10 +202,22 @@ The `format` argument supports the following expressions:
 - `{{minor}}`: minor version identifier
 - `{{patch}}`: patch version identifier
 
+**Pre-release handling:** When the tag contains a pre-release suffix (e.g.,
+`-beta.0`, `-rc4`), only formats using `{{version}}` or `{{raw}}` produce
+output. Partial formats like `{{major}}` or `{{major}}.{{minor}}` are skipped
+to avoid overwriting stable release tags.
+
+For example, `semver --auto` (or the equivalent four `semver --format` lines)
+with a stable tag `v1.2.3` produces three unique Docker tags: `1`, `1.2`, and
+`1.2.3`. With a pre-release tag `v1.2.3-rc4` it produces only `1.2.3-rc4`.
+The partial tags are skipped -- including `{{major}}.{{minor}}.{{patch}}` --
+because publishing `1.2.3` for a release candidate would incorrectly indicate
+a stable release.
+
 **Examples:**
 
-| Command                          | Tag          | Output      |
-| -------------------------------- | ------------ | ----------- |
+| Command                          | Tag          | Output       |
+| -------------------------------- | ------------ | ------------ |
 | `semver`                         | `v1.2.3`     | `1.2.3`     |
 | `semver -f {{raw}}`              | `v1.2.3`     | `v1.2.3`    |
 | `semver -f {{version}}`          | `v1.2.3`     | `1.2.3`     |
@@ -212,8 +225,11 @@ The `format` argument supports the following expressions:
 | `semver -f v{{major}}.{{minor}}` | `v1.2.3`     | `v1.2`      |
 | `semver -f {{patch}}`            | `v1.2.3`     | `3`         |
 | `semver -f {{version}}`          | `v1.2.3-rc4` | `1.2.3-rc4` |
-| `semver -f {{major}}.{{minor}}`  | `v1.2.3-rc4` | `1.2`       |
-| `semver -f {{patch}}`            | `v1.2.3-rc4` | `3`         |
+| `semver -f {{raw}}`              | `v1.2.3-rc4` | `v1.2.3-rc4` |
+| `semver -f {{major}}.{{minor}}`  | `v1.2.3-rc4` | _(skipped)_              |
+| `semver -f {{patch}}`            | `v1.2.3-rc4` | _(skipped)_              |
+| `semver --auto`                  | `v1.2.3`     | `1`, `1.2`, `1.2.3`     |
+| `semver --auto`                  | `v1.2.3-rc4` | `1.2.3-rc4`             |
 
 ---
 
