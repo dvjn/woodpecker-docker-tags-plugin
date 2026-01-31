@@ -165,14 +165,36 @@ parse_semver() {
   export VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_PRE_RELEASE
 }
 
+write_semver_tag() {
+  local format="$1"
+  local value="$2"
+
+  # Skip partial formats for pre-release versions to avoid overwriting stable tags
+  if [[ -n "$VERSION_PRE_RELEASE" && "$format" != *"{{version}}"* && "$format" != *"{{raw}}"* ]]; then
+    return
+  fi
+
+  local output="$format"
+  output="${output//\{\{raw\}\}/${value}}"
+  output="${output//\{\{version\}\}/${VERSION}}"
+  output="${output//\{\{major\}\}/${VERSION_MAJOR}}"
+  output="${output//\{\{minor\}\}/${VERSION_MINOR}}"
+  output="${output//\{\{patch\}\}/${VERSION_PATCH}}"
+  sanitize_and_write_tag "$output"
+}
+
 handle_semver() {
   [[ "$CI_PIPELINE_EVENT" != "tag" ]] && return
 
   local format="{{version}}"
   local value="$CI_COMMIT_TAG"
+  local auto=false
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    -a | --auto)
+      auto=true
+      ;;
     -f | --format)
       format="$2"
       shift
@@ -189,15 +211,21 @@ handle_semver() {
     shift
   done
 
+  if [[ "$auto" == true && "$format" != "{{version}}" ]]; then
+    echo "Error: --auto cannot be combined with --format." >&2
+    exit 1
+  fi
+
   parse_semver "$value"
-  sanitize_and_write_tag "$(
-    echo "$format" |
-      sed "s/{{raw}}/${value}/" |
-      sed "s/{{version}}/${VERSION}/" |
-      sed "s/{{major}}/${VERSION_MAJOR}/" |
-      sed "s/{{minor}}/${VERSION_MINOR}/" |
-      sed "s/{{patch}}/${VERSION_PATCH}/"
-  )"
+
+  if [[ "$auto" == true ]]; then
+    write_semver_tag "{{major}}" "$value"
+    write_semver_tag "{{major}}.{{minor}}" "$value"
+    write_semver_tag "{{major}}.{{minor}}.{{patch}}" "$value"
+    write_semver_tag "{{version}}" "$value"
+  else
+    write_semver_tag "$format" "$value"
+  fi
 }
 
 handle_sha() {
