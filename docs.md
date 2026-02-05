@@ -310,3 +310,126 @@ tags: |
 2. All the values apart from alphabets, numbers, hyphen (-), underscore (\_) and
    period (.) are replaces with a hyphen.
 3. The length of the tag is truncated to 128 characters.
+
+## Common Use Cases
+
+### Simple Project with Versioned Releases
+
+Basic setup for a project that tags releases and builds on every push.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        sha
+        semver --auto
+```
+
+**Tags generated:**
+- Push: `sha-abc123`
+- Tag `v1.2.3`: `1`, `1.2`, `1.2.3`.
+
+---
+
+### CI/CD Pipeline with PR Previews
+
+Full CI flow: preview builds for PRs, edge for main branch, versioned releases.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        pr
+        edge
+        semver --auto
+```
+
+**Tags generated:**
+- PR #123: `pr-123`
+- Push to main: `edge`
+- Tag `v1.2.3`: `1`, `1.2`, `1.2.3`
+- Tag `v1.2.3-rc4`: `1.2.3-rc4` (partial tags skipped)
+
+---
+
+### Multi-Environment Setup
+
+Separate tags for dev, staging, and production environments using branch names.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        branch -p env-
+        sha
+```
+
+**Tags generated:**
+- Push to `dev`: `env-dev`, `sha-abc123`
+- Push to `staging`: `env-staging`, `sha-abc123`
+- Push to `production`: `env-production`, `sha-abc123`
+
+---
+
+### Nightly Builds
+
+Generate dated tags for scheduled builds via cron.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        cron -f nightly-%Y-%m-%d
+```
+
+**Tags generated on cron event:**
+- `nightly-2024-06-02`
+
+---
+
+### Minimal / Lean Setup
+
+For projects that only need basic tags.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        edge
+        sha
+        semver
+```
+
+**Tags generated:**
+- Push to main: `edge`, `sha-abc123`
+- Tag `v1.2.3`: `1.2.3` (no partial tags)
+
+---
+
+### Preview Builds Only
+
+Useful for development/testing where you only need PR previews.
+
+```yaml
+steps:
+  - name: generate_tags
+    image: ghcr.io/dvjn/woodpecker-docker-tags-plugin
+    settings:
+      tags: |
+        pr
+        branch
+```
+
+**Tags generated:**
+- PR #42: `pr-42`
+- Push to `feature/login`: `feature-login`
